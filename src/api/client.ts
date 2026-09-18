@@ -24,42 +24,21 @@ const store = {
 };
 
 /**
- * Works out where the API actually lives for the device this is running on.
+ * The API base URL.
  *
- * `localhost` means a different machine depending on where the app runs: in a
- * browser it is the dev machine, on a real phone it is the phone itself, and on
- * an Android emulator it is the emulator. A hard-coded loopback address
- * therefore fails silently on a physical device — the request never leaves the
- * handset.
- *
- * In development Expo already knows the dev machine's address (it had to, to
- * serve the bundle), so the host is taken from there and only the port is
- * substituted. A production build uses the configured URL as-is.
+ * One deployed API for every build, so there is no loopback address to rewrite
+ * and no way for a release APK to ship pointing at a `localhost` that does not
+ * exist on the handset. Change it in app.config.ts.
  */
+const FALLBACK_API = 'https://talent-pro-backend.dev-api.softweirdo.com/api/v1';
+
 function resolveBaseUrl(): string {
+  // `extra` comes from the manifest, which a standalone build embeds. The
+  // literal below is the same URL compiled into the bundle, so the app still
+  // reaches the API if the manifest is ever unavailable — a crash or a screen
+  // of network errors would be a worse outcome than a duplicated constant.
   const configured = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl;
-  const fallback = configured ?? 'http://localhost:4000/api/v1';
-
-  if (Platform.OS === 'web') return fallback;
-
-  const isLoopback = /\/\/(localhost|127\.0\.0\.1)\b/.test(fallback);
-  if (!isLoopback) return fallback;
-
-  // e.g. "10.111.18.62:8081" — the machine serving the JS bundle.
-  const hostUri =
-    Constants.expoConfig?.hostUri ??
-    (Constants.expoGoConfig as { debuggerHost?: string } | undefined)?.debuggerHost;
-  const devHost = hostUri?.split(':')[0];
-
-  if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
-    return fallback.replace(/\/\/(localhost|127\.0\.0\.1)/, `//${devHost}`);
-  }
-
-  // No usable host: an Android emulator reaches the machine at this alias.
-  if (Platform.OS === 'android') {
-    return fallback.replace(/\/\/(localhost|127\.0\.0\.1)/, '//10.0.2.2');
-  }
-  return fallback;
+  return configured ?? FALLBACK_API;
 }
 
 export const BASE_URL = resolveBaseUrl();

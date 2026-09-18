@@ -1,29 +1,17 @@
 import type { ExpoConfig, ConfigContext } from 'expo/config';
 
 /**
- * Replaces the static app.json so the API URL can depend on the build.
+ * Replaces the static app.json.
  *
- * `APP_ENV` selects it — unset means local development, which is what you get
- * from `npm start`. EAS build profiles set it explicitly.
+ * The app always talks to the deployed API — development, device builds and
+ * release APKs alike. One URL means an APK can never ship pointing at a
+ * `localhost` that does not exist on the handset.
  */
-const LIVE_API = 'https://talent-pro-backend.dev-api.softweirdo.com/api/v1';
-const LOCAL_API = 'http://localhost:4000/api/v1';
-
-type AppEnv = 'development' | 'staging' | 'production';
-
-const APP_ENV = (process.env.APP_ENV as AppEnv) ?? 'development';
-
-const API_URL: Record<AppEnv, string> = {
-  // `localhost` is rewritten at runtime to the machine serving the bundle, so a
-  // physical phone reaches the dev machine rather than itself. See api/client.ts.
-  development: process.env.API_URL ?? LOCAL_API,
-  staging: process.env.API_URL ?? LIVE_API,
-  production: process.env.API_URL ?? LIVE_API,
-};
+const API_URL = 'https://talent-pro-backend.dev-api.softweirdo.com/api/v1';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: APP_ENV === 'production' ? 'TalentPro' : `TalentPro (${APP_ENV})`,
+  name: 'TalentPro',
   slug: 'talentpro',
   version: '1.0.0',
   orientation: 'portrait',
@@ -37,17 +25,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: false,
     // A separate bundle id per environment, so a dev build can sit alongside
     // the real app on the same handset.
-    bundleIdentifier:
-      APP_ENV === 'production'
-        ? 'in.mpowersolutions.talentpro'
-        : `in.mpowersolutions.talentpro.${APP_ENV}`,
+    bundleIdentifier: 'in.mpowersolutions.talentpro',
   },
 
   android: {
-    package:
-      APP_ENV === 'production'
-        ? 'in.mpowersolutions.talentpro'
-        : `in.mpowersolutions.talentpro.${APP_ENV}`,
+    package: 'in.mpowersolutions.talentpro',
     adaptiveIcon: { backgroundColor: '#0B2540' },
     edgeToEdgeEnabled: true,
   },
@@ -73,7 +55,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   extra: {
     ...config.extra,
-    apiUrl: API_URL[APP_ENV],
-    appEnv: APP_ENV,
+    apiUrl: API_URL,
   },
 });
