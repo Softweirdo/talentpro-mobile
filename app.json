@@ -39,7 +39,8 @@
       "apiUrl": "http://localhost:4000/api/v1",
       "eas": {
         "projectId": "6a424f52-50c8-4195-8c1f-481eb1e71a74"
-      }
+      },
+      "appEnv": "development"
     },
     "platforms": [
       "ios",

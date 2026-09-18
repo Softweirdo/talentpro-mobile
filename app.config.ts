@@ -72,6 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
 
   extra: {
+    ...config.extra,
     apiUrl: API_URL[APP_ENV],
     appEnv: APP_ENV,
   },
