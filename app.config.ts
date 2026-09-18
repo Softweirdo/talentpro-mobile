@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   scheme: 'talentpro',
   userInterfaceStyle: 'light',
+  icon: './assets/icon.png',
   newArchEnabled: true,
   assetBundlePatterns: ['**/*'],
   platforms: ['ios', 'android', 'web'],
@@ -30,11 +31,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   android: {
     package: 'in.mpowersolutions.talentpro',
-    adaptiveIcon: { backgroundColor: '#0B2540' },
+    adaptiveIcon: {
+      // Foreground is the glyph on transparency; the launcher composites it
+      // over this colour and applies its own mask.
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#2A7EBC',
+    },
     edgeToEdgeEnabled: true,
   },
 
-  web: { bundler: 'metro', output: 'single' },
+  web: { bundler: 'metro', output: 'single', favicon: './assets/favicon.png' },
 
   plugins: [
     'expo-font',
