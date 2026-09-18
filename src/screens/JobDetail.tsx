@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text as RNText, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text as RNText, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   Button,
@@ -17,9 +18,12 @@ import { EXPERIENCE_LABEL } from '../lib/format';
 import { useRelativeTime } from '../lib/relativeTime';
 import { colors, fonts, radius, spacing } from '../theme/index';
 import { useLocalizedStyle } from '../theme/text';
-import type { AppStackParams } from '../navigation/types';
+import type { AppStackParams, FeedStackParams } from '../navigation/types';
 
-type Props = NativeStackScreenProps<AppStackParams, 'JobDetail'>;
+type Props = CompositeScreenProps<
+  NativeStackScreenProps<FeedStackParams, 'JobDetail'>,
+  NativeStackScreenProps<AppStackParams>
+>;
 
 export function JobDetailScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
@@ -36,6 +40,15 @@ export function JobDetailScreen({ route, navigation }: Props) {
         {/* Navy gradient header, as in the prototype. */}
         <SafeAreaView edges={['top']} style={styles.header}>
           <View style={styles.headerInner}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              accessibilityLabel={t('detail.backToJobs')}
+              hitSlop={12}
+              style={({ pressed }) => [styles.back, pressed && styles.backPressed]}
+            >
+              <RNText style={localize(styles.backText)}>{t('detail.backToJobs')}</RNText>
+            </Pressable>
             <CompanyTag>{job.company}</CompanyTag>
             <Text variant="h1" style={styles.title}>
               {job.title}
@@ -115,7 +128,9 @@ export function JobDetailScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
 
-      <SafeAreaView edges={['bottom']} style={styles.cta}>
+      {/* The tab bar sits below this row and owns the bottom inset, so the
+          CTA must not claim it again. */}
+      <View style={styles.cta}>
         <View style={styles.ctaRow}>
           <Button
             title={t('detail.share')}
@@ -131,7 +146,7 @@ export function JobDetailScreen({ route, navigation }: Props) {
             style={styles.ctaApply}
           />
         </View>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -157,6 +172,9 @@ const styles = StyleSheet.create({
   content: { paddingBottom: spacing.xxl },
 
   header: { backgroundColor: colors.navy },
+  back: { alignSelf: 'flex-start', marginBottom: spacing.md },
+  backPressed: { opacity: 0.6 },
+  backText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white },
   headerInner: { padding: spacing.xl, paddingTop: spacing.md },
   title: { color: colors.white, marginTop: spacing.md, fontSize: 24, lineHeight: 30 },
   headerMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.md },

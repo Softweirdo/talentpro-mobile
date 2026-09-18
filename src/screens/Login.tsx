@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, Field, Text } from '../components/index';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { useAuth } from '../store/auth';
-import { errorMessage, isOffline } from '../api/client';
+import { apiHost, errorMessage, isOffline } from '../api/client';
 import { digitsOnly, isValidMobile } from '../lib/format';
 import { colors, spacing } from '../theme/index';
 import type { AuthStackParams } from '../navigation/types';
@@ -37,7 +37,11 @@ export function LoginScreen({ navigation }: Props) {
       });
     } catch (err) {
       setError(
-        isOffline(err) ? t('common.offline') : errorMessage(err, t('common.genericError')),
+        isOffline(err)
+          ? // In a dev build, name the host that failed — the usual cause is a
+            // device pointed at its own loopback rather than the dev machine.
+            `${t('common.offline')}${__DEV__ ? `\n${t('common.offlineDev', { host: apiHost })}` : ''}`
+          : errorMessage(err, t('common.genericError')),
       );
     } finally {
       setBusy(false);

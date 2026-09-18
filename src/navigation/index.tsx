@@ -19,10 +19,11 @@ import { NotificationsScreen } from '../screens/Notifications';
 import { Icon, type IconName } from '../components/Icon';
 import { colors, fonts } from '../theme/index';
 import { useLocalizedStyle } from '../theme/text';
-import type { AppStackParams, AuthStackParams, TabParams } from './types';
+import type { AppStackParams, AuthStackParams, FeedStackParams, TabParams } from './types';
 
 const AuthStack = createNativeStackNavigator<AuthStackParams>();
 const AppStack = createNativeStackNavigator<AppStackParams>();
+const FeedStack = createNativeStackNavigator<FeedStackParams>();
 const Tabs = createBottomTabNavigator<TabParams>();
 
 const navTheme = {
@@ -37,6 +38,19 @@ function AuthNavigator() {
       <AuthStack.Screen name="Otp" component={OtpScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
     </AuthStack.Navigator>
+  );
+}
+
+/**
+ * The job detail lives in the Feed tab's own stack, so pushing it leaves the
+ * tab bar in place. Both screens paint their own headers.
+ */
+function FeedNavigator() {
+  return (
+    <FeedStack.Navigator screenOptions={{ headerShown: false }}>
+      <FeedStack.Screen name="FeedHome" component={FeedScreen} />
+      <FeedStack.Screen name="JobDetail" component={JobDetailScreen} />
+    </FeedStack.Navigator>
   );
 }
 
@@ -66,7 +80,7 @@ function TabNavigator() {
     >
       <Tabs.Screen
         name="Feed"
-        component={FeedScreen}
+        component={FeedNavigator}
         options={{ title: t('tabs.home'), tabBarIcon: icon('home') }}
       />
       <Tabs.Screen
@@ -109,8 +123,6 @@ function AppNavigator() {
   return (
     <AppStack.Navigator>
       <AppStack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
-      {/* The detail screen paints its own navy header, so the stack one is hidden. */}
-      <AppStack.Screen name="JobDetail" component={JobDetailScreen} options={{ headerShown: false }} />
       <AppStack.Screen
         name="ApplyConfirm"
         component={ApplyConfirmScreen}

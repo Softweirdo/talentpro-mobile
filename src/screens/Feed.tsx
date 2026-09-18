@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Chip, EmptyState, ErrorState, Loading, SectionLabel, Text } from '../components/index';
 import { JobCard } from '../components/JobCard';
@@ -21,13 +22,20 @@ import { useCategories, useJobFeed, useMe, useNotifications, useRecommendedJobs 
 import { currentLanguage } from '../i18n/index';
 import { colors, fonts, radius, spacing } from '../theme/index';
 import { useLocalizedStyle } from '../theme/text';
-import type { AppStackParams } from '../navigation/types';
+import type { AppStackParams, FeedStackParams } from '../navigation/types';
 import type { Job } from '../api/types';
 
 export function FeedScreen() {
   const { t } = useTranslation();
-  // Lives in the tab navigator but pushes onto the parent stack.
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParams>>();
+  // Pushes the job detail within its own tab stack, and the inbox onto the
+  // parent stack, so both targets have to be in scope.
+  const navigation =
+    useNavigation<
+      CompositeNavigationProp<
+        NativeStackNavigationProp<FeedStackParams>,
+        NativeStackNavigationProp<AppStackParams>
+      >
+    >();
   const localize = useLocalizedStyle();
   const lang = currentLanguage();
 

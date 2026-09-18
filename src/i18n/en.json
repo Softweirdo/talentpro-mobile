@@ -18,8 +18,9 @@
     "months": "{{count}} months",
     "perMonth": "/mo",
     "language": "Language",
-    "offline": "No internet connection",
-    "genericError": "Something went wrong. Please try again."
+    "offline": "Cannot reach TalentPro. Check your connection and try again.",
+    "genericError": "Something went wrong. Please try again.",
+    "offlineDev": "Cannot reach the server at {{host}}."
   },
   "splash": {
     "tagline": "Empowering Your Success",

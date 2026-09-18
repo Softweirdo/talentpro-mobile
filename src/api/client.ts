@@ -24,15 +24,42 @@ const store = {
 };
 
 /**
- * An Android emulator cannot reach the host's localhost, so the loopback
- * address is rewritten to the emulator's host alias. A real device needs the
- * machine's LAN IP set in app.json.
+ * Works out where the API actually lives for the device this is running on.
+ *
+ * `localhost` means a different machine depending on where the app runs: in a
+ * browser it is the dev machine, on a real phone it is the phone itself, and on
+ * an Android emulator it is the emulator. A hard-coded loopback address
+ * therefore fails silently on a physical device — the request never leaves the
+ * handset.
+ *
+ * In development Expo already knows the dev machine's address (it had to, to
+ * serve the bundle), so the host is taken from there and only the port is
+ * substituted. A production build uses the configured URL as-is.
  */
 function resolveBaseUrl(): string {
   const configured = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl;
-  const url = configured ?? 'http://localhost:4000/api/v1';
-  if (Platform.OS === 'android') return url.replace('localhost', '10.0.2.2').replace('127.0.0.1', '10.0.2.2');
-  return url;
+  const fallback = configured ?? 'http://localhost:4000/api/v1';
+
+  if (Platform.OS === 'web') return fallback;
+
+  const isLoopback = /\/\/(localhost|127\.0\.0\.1)\b/.test(fallback);
+  if (!isLoopback) return fallback;
+
+  // e.g. "10.111.18.62:8081" — the machine serving the JS bundle.
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    (Constants.expoGoConfig as { debuggerHost?: string } | undefined)?.debuggerHost;
+  const devHost = hostUri?.split(':')[0];
+
+  if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
+    return fallback.replace(/\/\/(localhost|127\.0\.0\.1)/, `//${devHost}`);
+  }
+
+  // No usable host: an Android emulator reaches the machine at this alias.
+  if (Platform.OS === 'android') {
+    return fallback.replace(/\/\/(localhost|127\.0\.0\.1)/, '//10.0.2.2');
+  }
+  return fallback;
 }
 
 export const BASE_URL = resolveBaseUrl();
@@ -151,5 +178,16 @@ export function errorCode(err: unknown): string | null {
   return axios.isAxiosError(err) ? (err.response?.data?.error?.code ?? null) : null;
 }
 
+/**
+ * True when the request produced no HTTP response at all.
+ *
+ * This covers a genuinely offline device, a server that is down, a wrong host,
+ * and a blocked origin — they are indistinguishable from the client. The copy
+ * shown to the user says "cannot reach", not "no internet", because claiming
+ * the latter sends people to check a connection that is working fine.
+ */
 export const isOffline = (err: unknown): boolean =>
   axios.isAxiosError(err) && !err.response;
+
+/** The host the app is actually calling — surfaced in dev builds to make a misconfigured URL obvious. */
+export const apiHost = BASE_URL.replace(/^https?:\/\//, '').replace(/\/api.*$/, '');
