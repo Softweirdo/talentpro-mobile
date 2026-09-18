@@ -28,7 +28,10 @@ export function NotificationsScreen() {
   const open = (n: AppNotification) => {
     const screen = n.data?.screen;
     if (screen === 'JobDetail' && n.data.jobId) {
-      navigation.navigate('JobDetail', { jobId: n.data.jobId });
+      navigation.navigate('Tabs', {
+        screen: 'Feed',
+        params: { screen: 'JobDetail', params: { jobId: n.data.jobId } },
+      });
     } else if (screen === 'Referrals') {
       navigation.navigate('Tabs', { screen: 'Referrals' });
     } else if (screen === 'ApplicationDetail' || screen === 'Applications') {

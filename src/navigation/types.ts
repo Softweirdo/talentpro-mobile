@@ -12,8 +12,17 @@ export type AuthStackParams = {
   Register: undefined;
 };
 
+/**
+ * The job detail sits inside the Feed tab rather than over the whole app, so
+ * the tab bar stays on screen while a job is open — as in the prototype.
+ */
+export type FeedStackParams = {
+  FeedHome: undefined;
+  JobDetail: { jobId: string };
+};
+
 export type TabParams = {
-  Feed: undefined;
+  Feed: NavigatorScreenParams<FeedStackParams>;
   Applications: undefined;
   Referrals: undefined;
   Profile: undefined;
@@ -21,7 +30,6 @@ export type TabParams = {
 
 export type AppStackParams = {
   Tabs: NavigatorScreenParams<TabParams>;
-  JobDetail: { jobId: string };
   ApplyConfirm: { jobId: string };
   ShareReferral: { jobId?: string };
   EditProfile: undefined;
