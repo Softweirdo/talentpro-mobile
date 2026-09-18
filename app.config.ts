@@ -58,7 +58,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-secure-store',
     'expo-notifications',
-    ['expo-splash-screen', { backgroundColor: '#0B2540', resizeMode: 'contain' }],
+    [
+      'expo-splash-screen',
+      {
+        // A transparent 1x1 placeholder: the plugin always writes an
+        // `@drawable/splashscreen_logo` reference on Android, so an image is
+        // required even when we only want the background color to show.
+        image: './assets/splash-icon.png',
+        backgroundColor: '#0B2540',
+        resizeMode: 'contain',
+      },
+    ],
   ],
 
   extra: {
