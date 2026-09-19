@@ -7,7 +7,19 @@ import type { ExpoConfig, ConfigContext } from 'expo/config';
  * release APKs alike. One URL means an APK can never ship pointing at a
  * `localhost` that does not exist on the handset.
  */
-const API_URL = 'https://talent-pro-backend.dev-api.softweirdo.com/api/v1';
+const DEPLOYED_API = 'https://talent-pro-backend.dev-api.softweirdo.com/api/v1';
+
+/**
+ * The deployed API unless explicitly overridden, so a release APK can never
+ * ship pointing at a `localhost` that does not exist on the handset. To work
+ * against a backend running on this machine (port 4048, see the backend .env):
+ *
+ *   EXPO_PUBLIC_API_URL=http://localhost:4048/api/v1 npx expo start
+ *
+ * A real handset cannot reach your `localhost` — use the machine's LAN address
+ * there instead, e.g. http://192.168.1.5:4048/api/v1.
+ */
+const API_URL = process.env.EXPO_PUBLIC_API_URL || DEPLOYED_API;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
