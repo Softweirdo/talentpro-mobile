@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, Field, Text } from '../components/index';
@@ -52,13 +52,16 @@ export function LoginScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Edge-to-edge Android windows no longer resize themselves, so both
+        // platforms need an explicit behaviour to keep the field above the keyboard.
+        behavior="padding"
       >
-        <View style={styles.container}>
-          <View style={styles.top}>
-            <LanguageToggle />
-          </View>
-
+        <ScrollView
+          contentContainerStyle={styles.scrollWrap}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           <View style={styles.brand}>
             <View style={styles.logo}>
               <Text variant="display" style={styles.logoText}>
@@ -105,6 +108,11 @@ export function LoginScreen({ navigation }: Props) {
               {t('login.termsLine2')}
             </Text>
           </Pressable>
+        </ScrollView>
+
+        {/* Pinned outside the scroll view, and last so it paints above it. */}
+        <View style={styles.top}>
+          <LanguageToggle />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -114,7 +122,7 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   flex: { flex: 1 },
-  container: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
+  scrollWrap: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
   top: { position: 'absolute', top: spacing.lg, right: spacing.xl, left: spacing.xl, alignItems: 'flex-end' },
 
   brand: { alignItems: 'center', marginBottom: spacing.xxl },

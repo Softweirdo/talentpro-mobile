@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  KeyboardAvoidingView,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text as RNText,
   TextInput,
@@ -32,6 +34,20 @@ export function OtpScreen({ route, navigation }: Props) {
   const [seconds, setSeconds] = useState(resendAfter);
   const inputRef = useRef<TextInput>(null);
 
+  // Android leaves the input focused after the keyboard is dismissed (back
+  // button or swipe down), so a plain focus() is a no-op and the keyboard
+  // never returns. Blurring first makes the next focus reopen it.
+  const focusInput = useCallback(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (input.isFocused()) {
+      input.blur();
+      setTimeout(() => inputRef.current?.focus(), 60);
+      return;
+    }
+    input.focus();
+  }, []);
+
   useEffect(() => {
     if (seconds <= 0) return;
     const id = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000);
@@ -53,7 +69,7 @@ export function OtpScreen({ route, navigation }: Props) {
     } catch (err) {
       setCode('');
       setError(isOffline(err) ? t('common.offline') : errorMessage(err, t('otp.invalid')));
-      inputRef.current?.focus();
+      focusInput();
     } finally {
       setBusy(false);
     }
@@ -66,6 +82,7 @@ export function OtpScreen({ route, navigation }: Props) {
       setRequestId(result.requestId);
       setSeconds(result.resendAfter);
       setCode(result.devCode ?? '');
+      focusInput();
     } catch (err) {
       setError(errorMessage(err, t('common.genericError')));
     }
@@ -75,92 +92,111 @@ export function OtpScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <View style={styles.container}>
-        <Text variant="display" style={styles.title}>
-          {t('otp.title')}
-        </Text>
-        <Text variant="bodyMute" style={styles.subtitle}>
-          {t('otp.subtitle', { mobile: maskedMobile })}
-        </Text>
-
-        {/* A single hidden input backs the six boxes: one caret, one keyboard,
-            and SMS autofill still works. */}
-        <Pressable style={styles.boxes} onPress={() => inputRef.current?.focus()}>
-          {Array.from({ length: LENGTH }, (_, i) => (
-            <View key={i} style={[styles.box, code[i] ? styles.boxFilled : null]}>
-              <RNText style={styles.boxText}>{code[i] ?? ''}</RNText>
-            </View>
-          ))}
-        </Pressable>
-
-        <TextInput
-          ref={inputRef}
-          style={styles.hiddenInput}
-          value={code}
-          onChangeText={(v) => {
-            setCode(v.replace(/\D/g, '').slice(0, LENGTH));
-            setError(null);
-          }}
-          keyboardType="number-pad"
-          textContentType="oneTimeCode"
-          autoComplete="sms-otp"
-          maxLength={LENGTH}
-          autoFocus
-        />
-
-        {error ? (
-          <Text variant="small" style={styles.error}>
-            {error}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        // Edge-to-edge Android windows no longer resize themselves, so both
+        // platforms need an explicit behaviour to keep the boxes above the keyboard.
+        behavior="padding"
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollWrap}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <Text variant="display" style={styles.title}>
+            {t('otp.title')}
           </Text>
-        ) : null}
+          <Text variant="bodyMute" style={styles.subtitle}>
+            {t('otp.subtitle', { mobile: maskedMobile })}
+          </Text>
 
-        {seconds > 0 ? (
-          <View style={styles.timer}>
-            <Text variant="bodyMute">{t('otp.resendIn')} </Text>
-            <RNText style={styles.timerValue}>{mmss}</RNText>
+          {/* A single input backs the six boxes: one caret, one keyboard, and SMS
+              autofill still works. It sits invisibly on top of the boxes so a tap
+              lands on the native field itself — the keyboard then always reopens,
+              even when React still thinks the field is focused. */}
+          <View style={styles.boxesWrap}>
+            <Pressable style={styles.boxes} onPress={focusInput}>
+              {Array.from({ length: LENGTH }, (_, i) => (
+                <View key={i} style={[styles.box, code[i] ? styles.boxFilled : null]}>
+                  <RNText style={styles.boxText}>{code[i] ?? ''}</RNText>
+                </View>
+              ))}
+            </Pressable>
+
+            <TextInput
+              ref={inputRef}
+              style={styles.overlayInput}
+              value={code}
+              onChangeText={(v) => {
+                setCode(v.replace(/\D/g, '').slice(0, LENGTH));
+                setError(null);
+              }}
+              keyboardType="number-pad"
+              textContentType="oneTimeCode"
+              autoComplete="sms-otp"
+              maxLength={LENGTH}
+              caretHidden
+              autoFocus
+            />
           </View>
-        ) : (
-          <Pressable onPress={resend} style={styles.timer}>
-            <Text variant="body" style={{ color: colors.skyDeep, fontFamily: fonts.bold }}>
-              {t('otp.resend')}
+
+          {error ? (
+            <Text variant="small" style={styles.error}>
+              {error}
             </Text>
-          </Pressable>
-        )}
+          ) : null}
 
-        <Button
-          title={t('otp.verify')}
-          onPress={() => submit(code)}
-          loading={busy}
-          disabled={code.length !== LENGTH}
-        />
-        <Button
-          title={t('otp.changeNumber')}
-          onPress={() => navigation.goBack()}
-          variant="secondary"
-          style={{ marginTop: spacing.md }}
-        />
-
-        {devCode ? (
-          <View style={{ marginTop: spacing.xl }}>
-            <InfoNote>
-              <Text variant="small" style={{ color: colors.navy }}>
-                Development build — the code was filled in for you. In production it arrives by SMS.
+          {seconds > 0 ? (
+            <View style={styles.timer}>
+              <Text variant="bodyMute">{t('otp.resendIn')} </Text>
+              <RNText style={styles.timerValue}>{mmss}</RNText>
+            </View>
+          ) : (
+            <Pressable onPress={resend} style={styles.timer}>
+              <Text variant="body" style={{ color: colors.skyDeep, fontFamily: fonts.bold }}>
+                {t('otp.resend')}
               </Text>
-            </InfoNote>
-          </View>
-        ) : null}
-      </View>
+            </Pressable>
+          )}
+
+          <Button
+            title={t('otp.verify')}
+            onPress={() => submit(code)}
+            loading={busy}
+            disabled={code.length !== LENGTH}
+          />
+          <Button
+            title={t('otp.changeNumber')}
+            onPress={() => navigation.goBack()}
+            variant="secondary"
+            style={{ marginTop: spacing.md }}
+          />
+
+          {devCode ? (
+            <View style={{ marginTop: spacing.xl }}>
+              <InfoNote>
+                <Text variant="small" style={{ color: colors.navy }}>
+                  Development build — the code was filled in for you. In production it arrives by SMS.
+                </Text>
+              </InfoNote>
+            </View>
+          ) : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
-  container: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
+  flex: { flex: 1 },
+  scrollWrap: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
   title: { fontSize: 30 },
   subtitle: { marginTop: spacing.sm },
 
-  boxes: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', marginVertical: spacing.xxl },
+  boxesWrap: { marginVertical: spacing.xxl },
+  boxes: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center' },
   box: {
     width: 48,
     height: 58,
@@ -175,7 +211,9 @@ const styles = StyleSheet.create({
   // OTP digits stay monospace in both languages.
   boxText: { fontFamily: fonts.monoBold, fontSize: 24, color: colors.navy },
 
-  hiddenInput: { position: 'absolute', opacity: 0, height: 1, width: 1 },
+  // Invisible but hit-testable: it covers the whole box row so every tap is a
+  // real touch on the native input.
+  overlayInput: { ...StyleSheet.absoluteFillObject, opacity: 0, color: 'transparent' },
 
   error: { color: colors.danger, textAlign: 'center', marginBottom: spacing.md },
   timer: { flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.lg, minHeight: 24 },
