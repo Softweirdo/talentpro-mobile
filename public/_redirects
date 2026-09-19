@@ -1,0 +1,3 @@
+# app.json sets web.output = "single", so every route is served by one HTML
+# document. Without this, a deep link or a refresh on any path but / is a 404.
+/*    /index.html   200
