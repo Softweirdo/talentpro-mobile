@@ -16,6 +16,7 @@ import { Icon } from '../components/Icon';
 import { useJob } from '../api/hooks';
 import { EXPERIENCE_LABEL } from '../lib/format';
 import { useRelativeTime } from '../lib/relativeTime';
+import { useLocalizedJob } from '../lib/localizedJob';
 import { colors, fonts, radius, spacing } from '../theme/index';
 import { useLocalizedStyle } from '../theme/text';
 import type { AppStackParams, FeedStackParams } from '../navigation/types';
@@ -29,7 +30,8 @@ export function JobDetailScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const localize = useLocalizedStyle();
   const ago = useRelativeTime();
-  const { data: job, isLoading, isError, refetch } = useJob(route.params.jobId);
+  const { data, isLoading, isError, refetch } = useJob(route.params.jobId);
+  const job = useLocalizedJob(data);
 
   if (isLoading) return <Loading />;
   if (isError || !job) return <ErrorState onRetry={() => void refetch()} />;
@@ -84,6 +86,20 @@ export function JobDetailScreen({ route, navigation }: Props) {
               mono
             />
           </View>
+
+          {job.location ? (
+            <View style={styles.section}>
+              <Text variant="h3" style={styles.sectionTitle}>
+                {t('common.location')}
+              </Text>
+              <View style={styles.locationRow}>
+                <Icon name="pin" size={16} color={colors.sky} />
+                <Text variant="body" style={styles.locationText}>
+                  {job.location}
+                </Text>
+              </View>
+            </View>
+          ) : null}
 
           {job.description ? (
             <View style={styles.section}>
@@ -206,6 +222,8 @@ const styles = StyleSheet.create({
   section: { marginBottom: spacing.xl },
   sectionTitle: { marginBottom: spacing.md },
   paragraph: { lineHeight: 22, color: colors.text },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  locationText: { flex: 1, lineHeight: 22, color: colors.text },
 
   bullet: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   bulletDot: { color: colors.sky, fontSize: 16, lineHeight: 22 },

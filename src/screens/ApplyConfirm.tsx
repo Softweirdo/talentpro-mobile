@@ -12,6 +12,7 @@ import {
   Text,
 } from '../components/index';
 import { useApply, useJob, useMe } from '../api/hooks';
+import { useLocalizedJob } from '../lib/localizedJob';
 import { errorMessage, isOffline } from '../api/client';
 import { EXPERIENCE_LABEL, formatMobile } from '../lib/format';
 import { colors, radius, spacing } from '../theme/index';
@@ -22,6 +23,7 @@ type Props = NativeStackScreenProps<AppStackParams, 'ApplyConfirm'>;
 export function ApplyConfirmScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const job = useJob(route.params.jobId);
+  const localized = useLocalizedJob(job.data);
   const me = useMe();
   const apply = useApply();
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export function ApplyConfirmScreen({ route, navigation }: Props) {
             {job.data.company}
           </Text>
           <Text variant="h3" style={{ marginTop: 4 }}>
-            {job.data.title} — {job.data.location}
+            {localized!.title} — {localized!.location}
           </Text>
           <Text variant="small" style={{ marginTop: 3 }}>
             ₹{job.data.salaryMin.toLocaleString('en-IN')} –{' '}

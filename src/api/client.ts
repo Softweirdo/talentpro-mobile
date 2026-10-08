@@ -37,8 +37,12 @@ function resolveBaseUrl(): string {
   // literal below is the same URL compiled into the bundle, so the app still
   // reaches the API if the manifest is ever unavailable — a crash or a screen
   // of network errors would be a worse outcome than a duplicated constant.
+  // An explicit EXPO_PUBLIC_API_URL wins: Metro inlines it into the bundle
+  // directly, whereas the web dev server can serve a manifest cached from
+  // before the variable was set.
+  const override = process.env.EXPO_PUBLIC_API_URL;
   const configured = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl;
-  return configured ?? FALLBACK_API;
+  return override || configured || FALLBACK_API;
 }
 
 export const BASE_URL = resolveBaseUrl();
@@ -56,6 +60,11 @@ export const session = {
   get refresh() {
     return refreshToken;
   },
+  /**
+   * Restores the saved session. It stays valid for the backend's
+   * REFRESH_TOKEN_TTL_DAYS (30) from sign-in; once that lapses the refresh is
+   * refused and the session-lost handler sends the user back to sign in.
+   */
   async load(): Promise<boolean> {
     try {
       accessToken = await store.get(ACCESS_KEY);

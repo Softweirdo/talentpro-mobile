@@ -7,8 +7,10 @@ import { useLocalizedStyle } from '../theme/text';
 import type { Job } from '../api/types';
 import { EXPERIENCE_LABEL } from '../lib/format';
 import { useRelativeTime } from '../lib/relativeTime';
+import { useLocalizedJob } from '../lib/localizedJob';
 
-export function JobCard({ job, onPress }: { job: Job; onPress: () => void }) {
+export function JobCard({ job: source, onPress }: { job: Job; onPress: () => void }) {
+  const job = useLocalizedJob(source);
   const { t } = useTranslation();
   const localize = useLocalizedStyle();
   const ago = useRelativeTime();

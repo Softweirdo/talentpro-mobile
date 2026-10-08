@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
+import { Pressable, StyleSheet, Text as RNText, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -12,6 +13,7 @@ import {
   Screen,
   Text,
 } from '../components/index';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { Icon } from '../components/Icon';
 import { useMe } from '../api/hooks';
@@ -25,17 +27,12 @@ export function ProfileScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParams>>();
   const { signOut } = useAuth();
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const { data: me, isLoading, isError, refetch } = useMe();
   const lang = currentLanguage();
 
   if (isLoading) return <Loading />;
   if (isError || !me) return <ErrorState onRetry={() => void refetch()} />;
-
-  const confirmSignOut = () =>
-    Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('profile.logout'), style: 'destructive', onPress: () => void signOut() },
-    ]);
 
   const pastJobs = (me.employmentHistory ?? []).filter((h) => !h.isCurrent);
 
@@ -155,8 +152,22 @@ export function ProfileScreen() {
         <Button
           title={t('profile.logout')}
           variant="secondary"
-          onPress={confirmSignOut}
+          onPress={() => setConfirmingSignOut(true)}
           style={{ marginTop: spacing.md }}
+        />
+
+        <ConfirmDialog
+          visible={confirmingSignOut}
+          title={t('profile.logout')}
+          message={t('profile.logoutConfirm')}
+          confirmLabel={t('profile.logout')}
+          cancelLabel={t('common.cancel')}
+          destructive
+          onCancel={() => setConfirmingSignOut(false)}
+          onConfirm={() => {
+            setConfirmingSignOut(false);
+            void signOut();
+          }}
         />
       </View>
     </Screen>

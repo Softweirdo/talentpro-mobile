@@ -58,11 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     const refresh = session.refresh;
-    // Best effort — the local session is cleared regardless.
-    if (refresh) await api.post('/auth/logout', { refreshToken: refresh }).catch(() => {});
+    // Sign out locally first, then revoke in the background. Awaiting the call
+    // left the user staring at the profile screen for the client's full 25s
+    // timeout whenever the API was unreachable — and the session is cleared
+    // either way, so there is nothing to wait for. `/auth/logout` authenticates
+    // from the refresh token in the body, not the access token, so it still
+    // revokes correctly after the session is gone.
     await session.clear();
     qc.clear();
     setSignedIn(false);
+    if (refresh) void api.post('/auth/logout', { refreshToken: refresh }).catch(() => {});
   }, [qc]);
 
   useEffect(() => {

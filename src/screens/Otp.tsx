@@ -24,11 +24,13 @@ const LENGTH = 6;
 export function OtpScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
   const { verifyOtp, requestOtp } = useAuth();
-  const { requestId: initialRequestId, maskedMobile, resendAfter, devCode } = route.params;
+  const { requestId: initialRequestId, maskedMobile, resendAfter } = route.params;
 
   const [requestId, setRequestId] = useState(initialRequestId);
-  // Prefilled in development so the flow is walkable without an SMS gateway.
-  const [code, setCode] = useState(devCode ?? '');
+  const [devCode, setDevCode] = useState(route.params.devCode);
+  // Never prefilled: the user always types the code, even when a development
+  // backend echoes it back (it is only shown in the note below).
+  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [seconds, setSeconds] = useState(resendAfter);
@@ -81,7 +83,8 @@ export function OtpScreen({ route, navigation }: Props) {
       const result = await requestOtp(maskedMobile.replace(/\D/g, '').slice(-10));
       setRequestId(result.requestId);
       setSeconds(result.resendAfter);
-      setCode(result.devCode ?? '');
+      setDevCode(result.devCode);
+      setCode('');
       focusInput();
     } catch (err) {
       setError(errorMessage(err, t('common.genericError')));
@@ -177,7 +180,7 @@ export function OtpScreen({ route, navigation }: Props) {
             <View style={{ marginTop: spacing.xl }}>
               <InfoNote>
                 <Text variant="small" style={{ color: colors.navy }}>
-                  Development build — the code was filled in for you. In production it arrives by SMS.
+                  Development build — your code is {devCode}. In production it arrives by SMS.
                 </Text>
               </InfoNote>
             </View>

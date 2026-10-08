@@ -39,6 +39,13 @@ export interface Job {
   salaryMax: number;
   description: string | null;
   requirements: string[];
+  /** Machine translation for Gujarati mode; null until the server has made one. */
+  gu: {
+    title: string;
+    location: string;
+    description: string | null;
+    requirements: string[];
+  } | null;
   referralReward: number;
   tenureMonths: number;
   appliedCount: number;
